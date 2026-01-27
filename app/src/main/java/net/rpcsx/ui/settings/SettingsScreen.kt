@@ -611,6 +611,34 @@ fun SettingsScreen(
                     onClick = { navigateTo("controls") }
                 )       
             }
+                        item(key = "pixel_7_pro_mode") {
+                HomePreference(
+                    title = "Pixel 7 / Mali Pro Mode",
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                    description = "Optimizes Vulkan & CPU for Tensor G2",
+                    onClick = {
+                        // 1. Critical Mali Fix (System level)
+                        System.setProperty("MALI_USE_STRICT_SYNC", "false")
+                        
+                        // 2. Native Engine Fixes
+                        try {
+                            // Scale down to 540p (0.75x)
+                            RPCSX.instance.settingsSet("Video@@ResolutionScale", "75")
+                            
+                            // Use only 4 performance cores (Big cores)
+                            RPCSX.instance.settingsSet("CPU@@PreferredThreads", "4")
+                            
+                            // Relax rendering for Mali stability
+                            RPCSX.instance.settingsSet("Video@@WriteColorBuffers", "false")
+                            
+                            Toast.makeText(context, "Mali Performance Profile Applied!", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Log.e("RPCSX", "Setting failed: ${e.message}")
+                        }
+                    }
+                )
+                        }
+                        
 
             item(key = "share_logs") {
                 HomePreference(
