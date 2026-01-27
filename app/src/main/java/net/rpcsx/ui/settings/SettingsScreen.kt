@@ -96,6 +96,8 @@ import net.rpcsx.utils.RpcsxUpdater
 import org.json.JSONObject
 import java.io.File
 import kotlin.math.ceil
+import androidx.compose.material.icons.filled.Settings
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
