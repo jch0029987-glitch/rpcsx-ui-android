@@ -4,6 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -110,6 +114,20 @@ fun AppNavHost() {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+        // Debug variables for the overlay
+    var fpsCounter by remember { mutableStateOf("0") }
+    var gpuLoad by remember { mutableStateOf("Calculating...") }
+
+    // This updates the debug info every 1 second
+    LaunchedEffect(Unit) {
+        while(true) {
+            fpsCounter = RPCSX.instance.getFps().toString() 
+            // We can also pull the system info you saw earlier
+            gpuLoad = if (RPCSX.instance.systemInfo().contains("Mali")) "Mali G710 Active" else "Unknown GPU"
+            kotlinx.coroutines.delay(1000)
+        }
+    }
+    
     val prefs = remember { context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE) }
     val rpcsxLibrary by remember { RPCSX.activeLibrary }
 
@@ -543,6 +561,58 @@ fun GamesDestination(
                                     FirmwareRepository.version.value ?: stringResource(R.string.none)
                                 }"
                             )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp))
+                    
+                    Text(
+                        text = "PIXEL 7 PERFORMANCE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 28.dp, bottom = 8.dp)
+                    )
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            // Stats Rows
+                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                Text("Engine FPS", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                Text(fpsCounter, color = androidx.compose.ui.graphics.Color.Green, fontWeight = FontWeight.Bold)
+                            }
+                            
+                            Spacer(Modifier.height(6.dp))
+                            
+                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                Text("SoC Temp", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                val isHot = tempVal.replace("°C", "").toIntOrNull() ?: 0 > 42
+                                Text(tempVal, color = if (isHot) androidx.compose.ui.graphics.Color.Red else MaterialTheme.colorScheme.onSurface)
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // EMERGENCY KILL BUTTON
+                            Button(
+                                onClick = {
+                                    RPCSX.instance.kill()
+                                    Toast.makeText(context, "Mali Engine Terminated", Toast.LENGTH_SHORT).show()
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Icon(androidx.compose.material.icons.Icons.Default.Close, null, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("KILL PROCESS", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                         },
                         selected = false,
                         icon = { Icon(painterResource(R.drawable.hard_drive), contentDescription = null) },
